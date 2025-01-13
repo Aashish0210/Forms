@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Profile</title>
+</head>
+<body>
+    <h1>Intern Profile</h1>
+    <p><strong>Username:</strong> {{ intern_profile.user.username }}</p>
+    <p><strong>Department:</strong> {{ intern_profile.department.name }}</p>
+    <p><strong>Supervisor:</strong> {{ intern_profile.supervisor.username }}</p>
+    <p><strong>Phone Number:</strong> {{ intern_profile.phone_no }}</p>
+
+    <h2>Daily Reports</h2>
+    {% for report in intern_profile.reports.all %}
+        <p><strong>Time In:</strong> {{ report.time_in }}</p>
+        <p><strong>Time Out:</strong> {{ report.time_out }}</p>
+        <p><strong>Task Done:</strong> {{ report.work_done }}</p>
+        <p><strong>Problems Faced:</strong> {{ report.problems_faced }}</p>
+    {% endfor %}
+</body>
+</html>

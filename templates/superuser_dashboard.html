@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superuser Dashboard</title>
+</head>
+<body>
+    <h1>Superuser Dashboard</h1>
+    <h2>Intern Profiles</h2>
+    <table>
+        <tr>
+            <th>Username</th>
+            <th>Department</th>
+            <th>Supervisor</th>
+            <th>Phone</th>
+        </tr>
+        {% for intern in interns %}
+            <tr>
+                <td>{{ intern.user.username }}</td>
+                <td>{{ intern.department.name }}</td>
+                <td>{{ intern.supervisor.username }}</td>
+                <td>{{ intern.phone_no }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

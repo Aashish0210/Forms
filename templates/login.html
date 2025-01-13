@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #16a085; /* Updated to match signup green */
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-control {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #16a085; /* Updated to match signup green */
+            outline: none;
+            box-shadow: 0 0 5px rgba(22, 160, 133, 0.4); /* Updated to match signup green shadow */
+        }
+
+        .btn {
+            padding: 12px;
+            font-size: 16px;
+            background-color: #16a085; /* Updated to match signup green */
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #1abc9c; /* Slightly lighter green on hover */
+        }
+
+        p {
+            text-align: center;
+            margin-top: 15px;
+            color: #333;
+        }
+
+        p a {
+            color: #16a085; /* Updated to match signup green */
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        p a:hover {
+            text-decoration: underline;
+        }
+
+        /* Positioning the links in the top right corner */
+        .top-links {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .top-links a {
+            color: #16a085; /* Updated to match signup green */
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 15px;
+        }
+
+        .top-links a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 20px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-links">
+        <a href="{% url 'default_page' %}">Home</a>
+        <a href="{% url 'signup' %}">Sign Up</a>
+    </div>
+    
+    <div class="container">
+        <h2>Login to Your Account</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-control">
+                {{ form.username.label_tag }}
+                {{ form.username }}
+            </div>
+            <div class="form-control">
+                {{ form.password.label_tag }}
+                {{ form.password }}
+            </div>
+            <button type="submit" class="btn">Login</button>
+        </form>
+    </div>
+</body>
+</html>
