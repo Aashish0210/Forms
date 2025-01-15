@@ -38,6 +38,10 @@
             font-size: 32px;
             margin-bottom: 30px;
         }
+        .form-inputs {
+            color: red; /* Text color */
+            font-weight: bold; /* Bold text */
+        }
 
         /* Form Fields Styles */
         .form-input {
@@ -152,12 +156,13 @@
     <div class="form-container">
         <h2>Create Account</h2>
         <form method="POST">
+            <p class='form-inputs'>(Supervisor and pu_reg_no) field optional for Supervisor</p>
+
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit" class="form-button">Sign Up</button>
         </form>
         <div class="form-footer">
-            <p>Already have an account? <a href="{% url 'login' %}">Login</a></p>
         </div>
     </div>
     {% endblock %}

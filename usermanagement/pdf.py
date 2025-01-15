@@ -23,17 +23,17 @@ def generate_pdf(request):
 
     # Add title
     p.setFont("Helvetica-Bold", 14)
-    p.drawString(200, height - 50, "Intern Form")
+    p.drawString(200, height - 50, "Intern Evaluation Forms ")
 
     # Add intern details
     p.setFont("Helvetica", 10)
     user = intern_profile.user  # Access related user
     p.drawString(50, height - 100, f"Name: {user.first_name} {user.last_name}")
-    p.drawString(50, height - 120, f"Email: {user.email}")
-    p.drawString(50, height - 140, f"Phone Number: {intern_profile.phone_no or 'Not Provided'}")
+    p.drawString(185, height - 100, f"Email: {user.email}")
+    p.drawString(390, height - 100, f"Phone Number: {intern_profile.phone_no or 'Not Provided'}")
     if intern_profile.department:
-        p.drawString(50, height - 160, f"Department: {intern_profile.department.name}")
-        p.drawString(50, height - 180, f"Department Location: {intern_profile.department.location}")
+        p.drawString(50, height - 125, f"Department: {intern_profile.department.name}")
+        p.drawString(185, height - 125, f"Department Location: {intern_profile.department.location}")
     else:
         p.drawString(50, height - 160, "Department: Not Assigned")
 
@@ -45,20 +45,23 @@ def generate_pdf(request):
         supervisor_email = supervisor_profile.email if supervisor_profile else "Not Provided"
         supervisor_phone = supervisor_profile.phone_no if supervisor_profile else "Not Provided"
 
-        p.drawString(50, height - 200, f"Supervisor Name: {supervisor_name}")
-        p.drawString(50, height - 220, f"Supervisor Email: {supervisor_email}")
-        p.drawString(50, height - 240, f"Supervisor Phone: {supervisor_phone}")
+        p.drawString(390, height - 125, f"Supervisor Name: {supervisor_name}")
+        p.drawString(300, height - 155, f"Supervisor Email: {supervisor_email}")
+        p.drawString(100, height - 155, f"Supervisor Phone: {supervisor_phone}")
     else:
         p.drawString(50, height - 200, "Supervisor: Not Assigned")
 
     # Prepare table for daily reports
     table_start_y = height - 260
-    table_data = [["S.N.", "Time In", "Time Out", "Task Done", "Problem Faced"]]
+    table_data = [["S.N.", "Date", "Time In", "Time Out", "Task Done", "Problem Faced"]]  # Added Date column
     for idx, report in enumerate(daily_reports, start=1):
-        table_data.append([idx, report.time_in, report.time_out, report.task_done, report.problem_faced])
+        report_date = report.date.strftime('%Y-%m-%d') if report.date else 'No Date'
+        table_data.append([idx, report_date, report.time_in, report.time_out, report.task_done, report.problem_faced])
 
-    # Create table
-    table = Table(table_data, colWidths=[40, 100, 100, 150, 150])
+    # Adjust column widths to make the table more compact
+    table = Table(table_data, colWidths=[40, 70, 80, 80, 120, 120])  # Reduced width for 'Problem Faced'
+    
+    # Style the table
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -70,7 +73,7 @@ def generate_pdf(request):
         ('FONTSIZE', (0, 0), (-1, -1), 8),
     ]))
 
-    # Adjust for table height
+    # Adjust for table height and ensure it fits within page
     table_height = len(table_data) * 20
     available_space = height - table_start_y - 40
 
@@ -80,6 +83,7 @@ def generate_pdf(request):
         p.drawString(200, height - 50, "Intern Form")
         table_start_y = height - 100
 
+    # Wrap and draw table on canvas
     table.wrapOn(p, width, height)
     table.drawOn(p, 50, table_start_y - table_height)
 

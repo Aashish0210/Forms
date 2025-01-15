@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <style>
+        /* Body Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Form Container Styles */
+        .form-container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            z-index: 1;
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+
+        .form-container h2 {
+            text-align: center;
+            color: #16a085;
+            font-size: 32px;
+            margin-bottom: 30px;
+        }
+
+        /* Form Fields Styles */
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            margin: 12px 0;
+            border-radius: 8px;
+            border: 1px solid #bdc3c7;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Focus Effect */
+        .form-input:focus {
+            border-color: #16a085;
+            outline: none;
+            box-shadow: 0 0 8px rgba(22, 160, 133, 0.4);
+        }
+
+        /* Button Styling */
+        .form-button {
+            width: 100%;
+            padding: 14px;
+            background-color: #16a085;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        /* Button Hover Effect */
+        .form-button:hover {
+            background-color: #1abc9c;
+        }
+
+        /* Footer Section */
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        .form-footer a {
+            color: #16a085;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Positioning the links in the top right corner */
+        .top-links {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .top-links a {
+            color: #16a085;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 15px;
+        }
+
+        .top-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Mobile Responsive Styling */
+        @media (max-width: 600px) {
+            body {
+                height: auto;
+                padding: 20px;
+                overflow: initial;
+            }
+
+            .form-container {
+                padding: 25px;
+                max-width: 100%;
+                height: auto;
+                max-height: none;
+            }
+
+            .form-container h2 {
+                font-size: 28px;
+            }
+
+            .form-input {
+                font-size: 14px;
+            }
+
+            .form-button {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-links">
+        <a href="{% url 'default_page' %}">Home</a>
+        <a href="{% url 'login' %}">Login</a>
+        <a href="{% url 'signup' %}">Sign Up</a> <!-- Added link for Sign Up -->
+    </div>
+
+    <div class="form-container">
+        <h2>Create Account</h2>
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-field">
+                <label for="{{ form.role.id_for_label }}">Role</label>
+                {{ form.role }}
+            </div>
+        
+            <div class="form-field" id="username-field">
+                <label for="{{ form.username.id_for_label }}">Username</label>
+                {{ form.username }}
+            </div>
+        
+            <div class="form-field" id="password1-field">
+                <label for="{{ form.password1.id_for_label }}">Password</label>
+                {{ form.password1 }}
+            </div>
+        
+            <div class="form-field" id="password2-field">
+                <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+                {{ form.password2 }}
+            </div>
+        
+            <div class="form-field" id="email-field">
+                <label for="{{ form.email.id_for_label }}">Email</label>
+                {{ form.email }}
+            </div>
+        
+            <div class="form-field" id="phone-no-field">
+                <label for="{{ form.phone_no.id_for_label }}">Phone Number</label>
+                {{ form.phone_no }}
+            </div>
+        
+            <div class="form-field" id="supervisor-field">
+                <label for="{{ form.supervisor.id_for_label }}">Supervisor</label>
+                {{ form.supervisor }}
+            </div>
+        
+            <div class="form-field" id="department-field">
+                <label for="{{ form.department.id_for_label }}">Department</label>
+                {{ form.department }}
+            </div>
+        
+            <div class="form-field" id="pu-reg-no-field">
+                <label for="{{ form.pu_reg_no.id_for_label }}">PU Registration Number</label>
+                {{ form.pu_reg_no }}
+            </div>
+        
+            <div class="form-footer">
+                <button type="submit" class="form-button">Sign Up</button>
+            </div>
+        </form>
+
+        <script>
+            // Function to show/hide fields based on role selection
+            document.getElementById('id_role').addEventListener('change', function() {
+                let role = this.value;
+        
+                // Hide all fields initially
+                document.querySelectorAll('.form-field').forEach(function(field) {
+                    field.style.display = 'none';
+                });
+        
+                // Show fields based on role
+                if (role === 'intern') {
+                    document.getElementById('username-field').style.display = 'block';
+                    document.getElementById('password1-field').style.display = 'block';
+                    document.getElementById('password2-field').style.display = 'block';
+                    document.getElementById('email-field').style.display = 'block';
+                    document.getElementById('phone-no-field').style.display = 'block';
+                    document.getElementById('supervisor-field').style.display = 'block';
+                    document.getElementById('department-field').style.display = 'block';
+                    document.getElementById('pu-reg-no-field').style.display = 'block';
+                } else if (role === 'supervisor') {
+                    document.getElementById('username-field').style.display = 'block';
+                    document.getElementById('password1-field').style.display = 'block';
+                    document.getElementById('password2-field').style.display = 'block';
+                    document.getElementById('email-field').style.display = 'block';
+                    document.getElementById('phone-no-field').style.display = 'block';
+                    document.getElementById('department-field').style.display = 'block';
+                }
+            });
+        
+            // Trigger the change event on page load to ensure the correct fields are shown initially
+            document.getElementById('id_role').dispatchEvent(new Event('change'));
+        </script>
+    </div>
+</body>
+</html>
