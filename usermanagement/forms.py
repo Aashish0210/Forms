@@ -1,7 +1,8 @@
 from django import forms
-from .models import User, InternProfile, SupervisorProfile, Department, DailyReport,ProjectManagementForm,DailyActivity, NextDayPlanning
+from .models import User, InternProfile, SupervisorProfile, Department, DailyReport,ProjectManagementForm
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.forms import TimeInput
+from .models import InternDailyActivity, InternNextDayPlanning, SupervisorDailyActivity, SupervisorNextDayPlanning
 
 
 class SignUpForm(UserCreationForm):
@@ -89,7 +90,7 @@ class SignUpForm(UserCreationForm):
                 last_name=user.last_name,
                 phone_no=self.cleaned_data.get('phone_no'),
                 email=self.cleaned_data.get('email'),
-                department=user.department
+                
             )
 
         return user
@@ -120,35 +121,62 @@ class DailyForm(forms.ModelForm):
             'problem_faced': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
 
-class DailyActivityForm(forms.ModelForm):
+class InternDailyActivityForm(forms.ModelForm):
     class Meta:
-        model = DailyActivity
-        fields = [
-            'date','start_time', 'end_time', 
-            'total_hours', 'activity', 'remarks', 'other_remarks'
-        ]
+        model = InternDailyActivity
+        fields = ['intern_profile', 'date', 'start_time', 'end_time', 'total_hours', 'activity', 'remarks', 'other_remarks']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-            'start_time': forms.TimeInput(attrs={'type': 'time'}),
-            'end_time': forms.TimeInput(attrs={'type': 'time'}),
-            'activity': forms.Textarea(attrs={'rows': 3}),
-            'other_remarks': forms.Textarea(attrs={'rows': 3}),
+            'intern_profile': forms.Select(attrs={'class': 'form-control'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'total_hours': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Total Hours'}),
+            'activity': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Activity Details'}),
+            'remarks': forms.Select(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Remarks'}),
+            'other_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Other Remarks'}),
         }
 
-
-class NextDayPlanningForm(forms.ModelForm):
+class InternNextDayPlanningForm(forms.ModelForm):
     class Meta:
-        model = NextDayPlanning
-        fields = [
-             'date','coordination', 'start_time', 'end_time', 
-            'total_hours', 'to_do'
-        ]
+        model = InternNextDayPlanning
+        fields = ['intern_profile', 'date', 'coordination', 'start_time', 'end_time', 'total_hours', 'to_do']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-            'start_time': forms.TimeInput(attrs={'type': 'time'}),
-            'end_time': forms.TimeInput(attrs={'type': 'time'}),
-            'coordination': forms.Textarea(attrs={'rows': 3}),
-            'to_do': forms.Textarea(attrs={'rows': 3}),
+            'intern_profile': forms.Select(attrs={'class': 'form-control'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'coordination': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Coordination Details'}),
+            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'total_hours': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Total Hours'}),
+            'to_do': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'To-Do Details'}),
+        }
+
+class SupervisorDailyActivityForm(forms.ModelForm):
+    class Meta:
+        model = SupervisorDailyActivity
+        fields = ['supervisor_profile', 'date', 'start_time', 'end_time', 'total_hours', 'activity', 'remarks', 'other_remarks']
+        widgets = {
+            'supervisor_profile': forms.Select(attrs={'class': 'form-control'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'total_hours': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Total Hours'}),
+            'activity': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Activity Details'}),
+            'remarks': forms.Select(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Remarks'}),
+            'other_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Other Remarks'}),
+        }
+
+class SupervisorNextDayPlanningForm(forms.ModelForm):
+    class Meta:
+        model = SupervisorNextDayPlanning
+        fields = ['supervisor_profile', 'date', 'coordination', 'start_time', 'end_time', 'total_hours', 'to_do']
+        widgets = {
+            'supervisor_profile': forms.Select(attrs={'class': 'form-control'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'coordination': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Coordination Details'}),
+            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'total_hours': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Total Hours'}),
+            'to_do': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'To-Do Details'}),
         }
 
 

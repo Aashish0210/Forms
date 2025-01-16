@@ -26,6 +26,7 @@ class User(AbstractUser):
         related_name='custom_user_set',
         blank=True
     )
+    department=models.CharField(max_length=20)
 
     def __str__(self):
         return f"{self.username} - {self.role}"
@@ -61,14 +62,14 @@ class SupervisorProfile(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        limit_choices_to=Q(role='supervisor')
+        limit_choices_to=Q(role='supervisor')  # Restrict to supervisors
     )
+    first_name = models.CharField(max_length=150, blank=True)  # Allows blank values
+    last_name = models.CharField(max_length=150, blank=True)
     phone_no = models.CharField(max_length=15, blank=True, null=True)
     email = models.EmailField(max_length=100)
-
     def __str__(self):
         return f"Supervisor: {self.user.username}"
-
 
 # -------------------------------------------
 # Intern Profile
@@ -140,9 +141,8 @@ class ProjectManagementForm(models.Model):
 # -------------------------------------------
 # Daily Activity and Next Day Planning
 # -------------------------------------------
-class DailyActivity(models.Model):
-    intern_profile = models.ForeignKey(InternProfile, null=True, blank=True, on_delete=models.CASCADE)
-    supervisor_profile = models.ForeignKey(SupervisorProfile, null=True, blank=True, on_delete=models.CASCADE)
+class InternDailyActivity(models.Model):
+    intern_profile = models.ForeignKey(InternProfile, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=False)
     start_time = models.TimeField()
     end_time = models.TimeField()
@@ -152,17 +152,14 @@ class DailyActivity(models.Model):
     other_remarks = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        # Safely check if intern_profile or supervisor_profile exists
-        intern_username = self.intern_profile.user.username if self.intern_profile and self.intern_profile.user else "No Intern"
-        supervisor_username = self.supervisor_profile.user.username if self.supervisor_profile and self.supervisor_profile.user else "No Supervisor"
-        
-        # Return formatted string based on available profiles
-        return f"{intern_username if self.intern_profile else supervisor_username} - {self.date}"
+        return f"{self.intern_profile.user.username} - {self.date}"
 
 
-class NextDayPlanning(models.Model):
-    intern_profile = models.ForeignKey(InternProfile, null=True, blank=True, on_delete=models.CASCADE)
-    supervisor_profile = models.ForeignKey(SupervisorProfile, null=True, blank=True, on_delete=models.CASCADE)
+# -------------------------------------------
+# Next Day Planning for Intern
+# -------------------------------------------
+class InternNextDayPlanning(models.Model):
+    intern_profile = models.ForeignKey(InternProfile, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=False)
     coordination = models.TextField()
     start_time = models.TimeField()
@@ -171,12 +168,41 @@ class NextDayPlanning(models.Model):
     to_do = models.TextField()
 
     def __str__(self):
-        # Safely check if intern_profile or supervisor_profile exists
-        intern_username = self.intern_profile.user.username if self.intern_profile and self.intern_profile.user else "No Intern"
-        supervisor_username = self.supervisor_profile.user.username if self.supervisor_profile and self.supervisor_profile.user else "No Supervisor"
-        
-        # Return formatted string based on available profiles
-        return f"{intern_username if self.intern_profile else supervisor_username} - {self.date} Planning"
+        return f"{self.intern_profile.user.username} - {self.date} Planning"
+
+
+# -------------------------------------------
+# Daily Activity for Supervisor
+# -------------------------------------------
+class SupervisorDailyActivity(models.Model):
+    supervisor_profile = models.ForeignKey(SupervisorProfile, on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=False)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    total_hours = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    activity = models.TextField()
+    remarks = models.CharField(max_length=20, choices=[("Completed", "Completed"), ("Uncompleted", "Uncompleted"), ("Other", "Other")])
+    other_remarks = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.supervisor_profile.user.username} - {self.date}"
+
+
+# -------------------------------------------
+# Next Day Planning for Supervisor
+# -------------------------------------------
+class SupervisorNextDayPlanning(models.Model):
+    supervisor_profile = models.ForeignKey(SupervisorProfile, on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=False)
+    coordination = models.TextField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    total_hours = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    to_do = models.TextField()
+
+    def __str__(self):
+        return f"{self.supervisor_profile.user.username} - {self.date} Planning"
+
 
 
 # -------------------------------------------

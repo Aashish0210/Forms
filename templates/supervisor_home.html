@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Form Page</title>
+    <title>Supervisor Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -12,14 +12,14 @@
             margin: 0;
             padding: 0;
             font-family: 'Roboto', sans-serif;
-            background: linear-gradient(120deg,rgb(103, 139, 125),rgb(60, 148, 149),rgb(37, 100, 127));
+            background: linear-gradient(120deg, #1d3557, #457b9d, #a8dadc);
             background-size: 300% 300%;
-            animation: gradientAnimation 12s ease infinite;
+            animation: gradientAnimation 10s ease infinite;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
         }
 
         /* Navbar Styling */
@@ -31,73 +31,110 @@
             position: fixed;
             top: 0;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
             z-index: 10;
         }
 
-        .navbar a {
+        .navbar a, .navbar button {
             color: white;
             text-decoration: none;
             margin: 0 15px;
             font-size: 16px;
             font-weight: 500;
+            background: none;
+            border: none;
+            cursor: pointer;
             transition: color 0.3s ease;
         }
 
-        .navbar a:hover {
+        .navbar a:hover, .navbar button:hover {
             color: #00c6ff;
         }
 
-        /* Form Container */
-        .form-container {
-            background: linear-gradient(145deg, #2c3e50, #1c2833);
-            border-radius: 15px;
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
-            padding: 40px 50px;
+        /* Main Section Styling */
+        .main-section {
+            margin-top: 120px;
             width: 100%;
-            max-width: 600px;
-            margin-top: 100px;
-            animation: fadeIn 1s ease-in-out;
-            color: white;
+            max-width: 800px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            text-align: center;
         }
 
-        .form-container h2 {
-            text-align: center;
+        .welcome-message {
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Buttons for Form Selection */
+        .form-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .form-buttons button {
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .form-buttons button#pmf-button {
+            background-color: #1e90ff;
+        }
+
+        .form-buttons button#pmf-button:hover {
+            background-color: #4682b4;
+        }
+
+        .form-buttons button#daf-button {
+            background-color: #ff6347;
+        }
+
+        .form-buttons button#daf-button:hover {
+            background-color: #e55347;
+        }
+
+        .form-buttons button#ndf-button {
+            background-color: #2ecc71;
+        }
+
+        .form-buttons button#ndf-button:hover {
+            background-color: #27ae60;
+        }
+
+        /* Form Section Styling */
+        .form-section {
+            background: linear-gradient(145deg, #34495e, #2c3e50);
+            border-radius: 15px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+            padding: 30px;
+            color: white;
+            display: none;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .form-section h2 {
             color: #a7d129;
             font-weight: 700;
             margin-bottom: 20px;
         }
 
-        /* Messages Styling */
-        .messages {
-            list-style-type: none;
-            padding: 0;
-            margin: 0 0 20px;
-        }
-
-        .message {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            color: white;
-        }
-
-        .message.success {
-            background-color: #27ae60;
-        }
-
-        .message.error {
-            background-color: #c0392b;
-        }
-
-        /* Input Fields Styling */
-        .form-container input,
-        .form-container select,
-        .form-container textarea,
-        .form-container button {
+        .form-section input,
+        .form-section textarea,
+        .form-section button {
             width: 100%;
             padding: 12px 15px;
             margin: 10px 0;
@@ -111,11 +148,7 @@
                         inset -2px -2px 4px rgba(255, 255, 255, 0.1);
         }
 
-        .form-container textarea {
-            resize: none;
-        }
-
-        .form-container button {
+        .form-section button {
             background: linear-gradient(120deg, #a7d129, #27ae60);
             color: white;
             font-weight: 600;
@@ -124,11 +157,17 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
         }
 
-        .form-container button:hover {
+        .form-section button:hover {
             background: linear-gradient(120deg, #27ae60, #a7d129);
         }
 
-        /* Fade-in Animation */
+        /* Animations */
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -140,64 +179,15 @@
             }
         }
 
-        /* Background Animation */
-        @keyframes gradientAnimation {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Media Queries for Responsiveness */
         @media (max-width: 768px) {
-            .navbar {
-                padding: 10px 20px;
-            }
-
-            .navbar a {
+            .navbar a, .navbar button {
+                font-size: 14px;
                 margin: 0 10px;
-                font-size: 14px;
             }
 
-            .form-container {
-                padding: 30px 40px;
-                margin-top: 80px;
-            }
-
-            .form-container h2 {
-                font-size: 24px;
-                margin-bottom: 15px;
-            }
-
-            .form-container input,
-            .form-container select,
-            .form-container textarea,
-            .form-container button {
-                font-size: 14px;
-                padding: 10px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .navbar {
+            .form-buttons button {
                 padding: 10px 15px;
-            }
-
-            .form-container {
-                padding: 25px 30px;
-                margin-top: 60px;
-            }
-
-            .form-container h2 {
-                font-size: 20px;
-                margin-bottom: 10px;
-            }
-
-            .form-container input,
-            .form-container select,
-            .form-container textarea,
-            .form-container button {
-                font-size: 12px;
-                padding: 8px;
+                font-size: 14px;
             }
         }
     </style>
@@ -206,41 +196,60 @@
     <!-- Navbar -->
     <div class="navbar">
         <a href="{% url 'default_page' %}"><i class="fas fa-home"></i> Home</a>
-        <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <button onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
     </div>
 
-    <!-- Form Container -->
-    <div class="form-container">
-        <h2>Project Management Form</h2>
+    <!-- Main Section -->
+    <div class="main-section">
+        <div class="welcome-message">
+            <h2>Welcome, {{ user.first_name }}!</h2>
+            <p>Choose a form below to manage your daily activities and plan ahead effectively.</p>
+        </div>
 
-        <!-- Messages -->
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li class="message {{ message.tags }}">{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+        <div class="form-buttons">
+            <button id="pmf-button" onclick="toggleForm('pmf')">Project Management Form (PMF)</button>
+            <button id="daf-button" onclick="toggleForm('daf')">Daily Activity Form (DAF)</button>
+            <button id="ndf-button" onclick="toggleForm('ndf')">Next Day Planning Form (NDF)</button>
+        </div>
 
-        <!-- Form -->
-        <form method="POST">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn">Submit</button>
-        </form>
+        <div id="pmf" class="form-section">
+            <h2>Project Management Form</h2>
+            <form method="POST">
+                {% csrf_token %}
+                {{ project_management_form.as_p }}
+                <button type="submit" name="project_management">Submit</button>
+            </form>
+        </div>
+
+        <div id="daf" class="form-section">
+            <h2>Daily Activity Form</h2>
+            <form method="POST">
+                {% csrf_token %}
+                {{ daily_activity_form.as_p }}
+                <button type="submit" name="daily_activity">Submit</button>
+            </form>
+        </div>
+
+        <div id="ndf" class="form-section">
+            <h2>Next Day Planning Form</h2>
+            <form method="POST">
+                {% csrf_token %}
+                {{ next_day_planning_form.as_p }}
+                <button type="submit" name="next_day_planning">Submit</button>
+            </form>
+        </div>
     </div>
 
     <script>
-        // Add a fade-out effect for messages
-        document.addEventListener('DOMContentLoaded', () => {
-            const messages = document.querySelectorAll('.message');
-            messages.forEach(message => {
-                setTimeout(() => {
-                    message.style.opacity = '0';
-                    message.style.transition = 'opacity 1s ease';
-                }, 3000); // Fade out after 3 seconds
-            });
-        });
+        function toggleForm(formId) {
+            const forms = document.querySelectorAll('.form-section');
+            forms.forEach(form => form.style.display = 'none');
+            document.getElementById(formId).style.display = 'block';
+        }
+
+        function handleLogout() {
+            window.location.href = "{% url 'logout' %}";
+        }
     </script>
 </body>
 </html>

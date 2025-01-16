@@ -3,313 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intern Home</title>
-    <style>
-        /* Global Styles */
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f7fc;
-            margin: 0;
-            padding: 0;
-            color: #333;
-        }
-
-        h1, h2, h3 {
-            color: #333;
-            font-weight: 600;
-        }
-
-        h1 {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 2.8em;
-            color: #28a745;
-            opacity: 0;
-            animation: fadeIn 1s ease-out forwards;
-        }
-
-        /* Button Animations */
-        .form-button {
-            background-color: #28a745;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1em;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-top: 20px;
-            opacity: 0;
-            animation: buttonFadeIn 1s ease-out forwards;
-        }
-
-        .form-button:hover {
-            background-color: #218838;
-        }
-
-        .form-container {
-            display: none;
-            opacity: 0;
-            animation: formAnimation 1s ease-out 0.5s forwards;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes formAnimation {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes buttonFadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Container Styles */
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            background: #e9ecef;
-            border-radius: 12px;
-            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            box-sizing: border-box;
-            position: relative;
-        }
-
-        .profile-info {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #eee;
-        }
-
-        .profile-info p {
-            font-size: 1.2em;
-            margin: 10px 0;
-        }
-
-        /* Message Styles */
-        .message {
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            font-size: 1.1em;
-        }
-
-        .message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .message.failure {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        /* Report List */
-        .report-list ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        .report-list li {
-            background-color: #f9f9f9;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-
-        .report-list li:hover {
-            background-color: #e1e1e1;
-            transform: translateY(-3px);
-        }
-
-        /* Actions */
-        .actions {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 15px;
-            font-size: 1.1em;
-        }
-
-        .actions a {
-            text-decoration: none;
-            color: #28a745;
-            font-weight: bold;
-            transition: color 0.3s ease;
-        }
-
-        .actions a:hover {
-            color: #218838;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-
-            h1 {
-                font-size: 2.3em;
-            }
-
-            .form-button {
-                font-size: 1em;
-                padding: 10px;
-            }
-
-            .actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-    </style>
+    <title>Intern Dashboard</title>
 </head>
 <body>
-    <h1>Welcome, {{ intern_profile.user.username }}!</h1>
+    <header>
+        <h1>Welcome, {{ intern_profile.user.username }}</h1>
+        <h2>Department: {{ department.name }} | Supervisor: {{ supervisor.username }}</h2>
+    </header>
 
-    <div class="container">
-        <div class="profile-info">
-            <h2>Your Profile</h2>
-            <p><strong>Department:</strong> {{ department.name }}</p>
-            <p><strong>Supervisor:</strong> 
-                {% if supervisor %}
-                    {{ supervisor.first_name }} {{ supervisor.last_name }}
-                {% else %}
-                    No supervisor assigned.
-                {% endif %}
-            </p>
-        </div>
+    <div class="content">
+        <h3>Daily Reports</h3>
+        <ul>
+            {% for report in daily_reports %}
+                <li>{{ report.date }} - {{ report.task_done }}</li>
+            {% empty %}
+                <li>No daily reports submitted yet.</li>
+            {% endfor %}
+        </ul>
 
-        <!-- Message Display -->
-        {% if form_submission_status %}
-            <div class="message {{ form_submission_status }}">
-                {% if form_submission_status == "success" %}
-                    Report submitted successfully!
-                {% elif form_submission_status == "failure" %}
-                    Could not submit the report. Reason: {{ failure_reason }}.
-                {% endif %}
-            </div>
-        {% endif %}
+        <hr>
 
-        <!-- Buttons to open the forms -->
-        <button class="form-button" id="dailyReportButton">Fill Your Daily Report</button>
-        <button class="form-button" id="dailyActivityButton">Fill Your Daily Activity</button>
-        <button class="form-button" id="nextDayPlanningButton">Fill Your Next Day Planning</button>
-        <button class="form-button" id="existingReportsButton">See Existing Reports</button>
+        <h3>Submit Daily Report</h3>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ daily_report_form.as_p }}
+            <button type="submit" name="daily_report">Submit Daily Report</button>
+        </form>
 
-        <!-- Daily Report Form -->
-        <div class="form-container" id="dailyReportForm">
-            <h2>Daily Report Form</h2>
-            <form method="POST">
-                {% csrf_token %}
-                {{ daily_report_form.as_p }}
-                {% if daily_report_form.errors %}
-                    <ul>
-                        {% for field in daily_report_form %}
-                            {% for error in field.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                <button type="submit" name="daily_report">Submit Daily Report</button>
-            </form>
-        </div>
+        <hr>
 
-        <!-- Daily Activity Form -->
-        <div class="form-container" id="dailyActivityForm">
-            <h2>Daily Activity Form</h2>
-            <form method="POST">
-                {% csrf_token %}
-                {{ daily_activity_form.as_p }}
-                {% if daily_activity_form.errors %}
-                    <ul>
-                        {% for field in daily_activity_form %}
-                            {% for error in field.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                <button type="submit" name="daily_activity">Submit Daily Activity</button>
-            </form>
-        </div>
+        <h3>Daily Activities</h3>
+        <ul>
+            {% for activity in daily_activities %}
+                <li>
+                    <strong>Date:</strong> {{ activity.date }} | 
+                    <strong>Start Time:</strong> {{ activity.start_time }} | 
+                    <strong>End Time:</strong> {{ activity.end_time }} | 
+                    <strong>Total Hours:</strong> {{ activity.total_hours }} | 
+                    <strong>Activity:</strong> {{ activity.activity }} | 
+                    <strong>Remarks:</strong> {{ activity.remarks }}
+                    {% if activity.remarks == "Other" %}
+                        <strong>Other Remarks:</strong> {{ activity.other_remarks }}
+                    {% endif %}
+                </li>
+            {% empty %}
+                <li>No daily activities submitted yet.</li>
+            {% endfor %}
+        </ul>
 
-        <!-- Next Day Planning Form -->
-        <div class="form-container" id="nextDayPlanningForm">
-            <h2>Next Day Planning Form</h2>
-            <form method="POST">
-                {% csrf_token %}
-                {{ next_day_planning_form.as_p }}
-                {% if next_day_planning_form.errors %}
-                    <ul>
-                        {% for field in next_day_planning_form %}
-                            {% for error in field.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                <button type="submit" name="next_day_planning">Submit Next Day Planning</button>
-            </form>
-        </div>
+        <hr>
 
-        <!-- Existing Reports -->
-        <div class="form-container" id="existingReports">
-            <h3>Existing Reports</h3>
-            <ul>
-                {% for report in daily_reports %}
-                    <li>{{ report.date }} - {{ report.time_in }} - {{ report.time_out }}: {{ report.task_done }} - {{ report.problem_faced }}</li>
-                {% empty %}
-                    <li>No reports submitted yet.</li>
-                {% endfor %}
-            </ul>
-        </div>
+        <h3>Submit Daily Activity</h3>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ daily_activity_form.as_p }}
+            <button type="submit" name="daily_activity">Submit Daily Activity</button>
+        </form>
 
-        <!-- Actions (Logout, Home, Generate PDF) -->
-        <div class="actions">
-            <a href="{% url 'logout' %}">Logout</a>
-            <a href="{% url 'default_page' %}">Home</a>
-            <a href="{% url 'generate_pdf' %}">Generate PDF</a>
-        </div>
+        <hr>
+
+        <h3>Next Day Planning</h3>
+        <ul>
+            {% for planning in next_day_plans %}
+                <li>
+                    <strong>Date:</strong> {{ planning.date }} | 
+                    <strong>Start Time:</strong> {{ planning.start_time }} | 
+                    <strong>End Time:</strong> {{ planning.end_time }} | 
+                    <strong>Total Hours:</strong> {{ planning.total_hours }} | 
+                    <strong>To-Do:</strong> {{ planning.to_do }} | 
+                    <strong>Coordination:</strong> {{ planning.coordination }}
+                </li>
+            {% empty %}
+                <li>No next day planning submitted yet.</li>
+            {% endfor %}
+        </ul>
+
+        <hr>
+
+        <h3>Submit Next Day Planning</h3>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ next_day_planning_form.as_p }}
+            <button type="submit" name="next_day_planning">Submit Next Day Planning</button>
+        </form>
     </div>
 
-    <script>
-        // Script to toggle visibility of the forms
-        document.getElementById('dailyReportButton').addEventListener('click', function() {
-            toggleForm('dailyReportForm');
-        });
-
-        document.getElementById('dailyActivityButton').addEventListener('click', function() {
-            toggleForm('dailyActivityForm');
-        });
-
-        document.getElementById('nextDayPlanningButton').addEventListener('click', function() {
-            toggleForm('nextDayPlanningForm');
-        });
-
-        document.getElementById('existingReportsButton').addEventListener('click', function() {
-            toggleForm('existingReports');
-        });
-
-        function toggleForm(formId) {
-            const forms = document.querySelectorAll('.form-container');
-            forms.forEach(form => form.style.display = 'none');
-            const activeForm = document.getElementById(formId);
-            if (activeForm) {
-                activeForm.style.display = 'block';
-            }
-        }
-    </script>
+    <footer>
+        <p>Powered by Aashish Pradhan</p>
+    </footer>
 </body>
 </html>
