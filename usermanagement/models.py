@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.db.models import Q
 from django.utils.timezone import now
+from django.core.validators import RegexValidator
+
 
 
 # -------------------------------------------
@@ -11,8 +13,10 @@ class User(AbstractUser):
     ROLES = [
         ('intern', 'Intern'),
         ('supervisor', 'Supervisor'),
+        ('students', 'students'),
+        ('superuser', 'Superuser'),
     ]
-    pu_reg_no = models.CharField(max_length=20, default="1-12-2024")
+    pu_reg_no = models.CharField(max_length=20, blank=True,null=True)
     role = models.CharField(max_length=20, choices=ROLES, default='intern')
     phone_no = models.CharField(max_length=15, blank=True, null=True)
 
@@ -26,7 +30,7 @@ class User(AbstractUser):
         related_name='custom_user_set',
         blank=True
     )
-    department=models.CharField(max_length=20)
+    department=models.CharField(max_length=20,null=True,blank=True)
 
     def __str__(self):
         return f"{self.username} - {self.role}"
@@ -242,11 +246,18 @@ class Students(models.Model):
     username=models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        limit_choice_to=Q('studenst')
+        limit_choices_to=Q(role='students')
     )
-    img_field = models.URLField(max_length=200, blank=True, null=True, help_text="Enter a valid image URL.")
+    img_field = models.CharField(max_length=200, blank=True, null=True, help_text="Enter a valid image URL.")
     full_name=models.CharField(max_length=20)
-    gender=models.CharField(max_length=20,choices=('male', 'female'))
+    gender = models.CharField(
+        max_length=20,
+        choices=[
+            ('male', 'Male'),
+            ('female', 'Female')
+        ],
+        default='male'
+    )
     date_of_birth=models.DateField()
     phone_no = models.CharField(
         max_length=15,
@@ -264,21 +275,42 @@ class Students(models.Model):
     parents_info=models.CharField(max_length=200,default={'Father Name=Hari', 'Mother Name=Sita'})
     par_phone_no=models.CharField(max_length=15)
     def __str__(self):
-        return self.full_name
+        return f"{self.full_name} - {self.parents_info}"
 
 
-class studentacademicdetails(models.Model):
+class StudentAcademicDetails(models.Model):
     user=models.ForeignKey(Students,on_delete=models.CASCADE)
     degree=models.CharField(max_length=30)
-    strated_date=models.DateField()
+    started_date=models.DateField()
     division_gpa = models.CharField(max_length=100, blank=True, null=True, help_text="Enter the division or GPA as a string.")
     college_university=models.CharField(max_length=30)
-    def __str__(self):
-        return self.user
+    
 
-class permanentaddress(models.Model):
+class PermanentAddress(models.Model):
     user=models.ForeignKey(Students,on_delete=models.CASCADE)
     provience=models.CharField(max_length=30)
     district=models.CharField(max_length=30)
     mc_rm=models.CharField(max_length=30,help_text="Enter the name of metropolitan/district name")
+    ward_no=models.IntegerField()
 
+class CurrentAddress(models.Model):
+    user=models.ForeignKey(Students,on_delete=models.CASCADE)
+    provience=models.CharField(max_length=30)
+    district=models.CharField(max_length=30)
+    mc_rm=models.CharField(max_length=30,help_text="Enter the name of metropolitan/district name")
+    ward_no=models.IntegerField()
+
+class IntrestedCourses(models.Model):
+    user=models.ForeignKey(Students,on_delete=models.CASCADE)
+    courses=[
+        ('Accounting','Accounting'),
+        ('Office Package','Office Package'),
+        ('Graaphic design','Graaphic design'),
+        ('Web Develpoment','Web Develpoment'),
+        ('SEO','SEO'),
+        ('English Language','English Language'),
+        ('video Editing','video Editing'),
+        ('Others','Others'),
+    ]
+    intrested_courses=models.CharField(max_length=30,choices=courses)
+    suitable_time=models.CharField(max_length=30)

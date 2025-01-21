@@ -1,7 +1,13 @@
 from django.contrib import admin
 from .models import User, InternProfile, SupervisorProfile, Department
 from .models import DailyReport, InternDailyActivity, InternNextDayPlanning, SupervisorDailyActivity, SupervisorNextDayPlanning
-from .models import ProjectManagementForm
+from .models import (ProjectManagementForm,
+                     Students,
+                     StudentAcademicDetails,
+                     PermanentAddress,
+                     CurrentAddress,
+                     IntrestedCourses
+                     )
 
 # Admin for User Model
 class UserAdmin(admin.ModelAdmin):
@@ -73,8 +79,44 @@ class DepartmentAdmin(admin.ModelAdmin):
     search_fields = ('name', 'head__username')
     list_filter = ('head',)
 
+class StudentAcademicDetailsInline(admin.TabularInline):
+    model=StudentAcademicDetails
+    extra=0
+    fields= ('degree','started_date','division_gpa','college_university')
+    can_delete=True
+
+class PermanentAddressInline(admin.TabularInline):
+    model=PermanentAddress
+    extra=0
+    fields=('provience','district','mc_rm','ward_no')
+    can_delete=True
+
+class CurrentAddressInline(admin.TabularInline):
+    model=CurrentAddress
+    extra=0
+    fields=('provience','district','mc_rm','ward_no')
+    can_delete=True
+
+class IntrestedCoursesInline(admin.TabularInline):
+    model=IntrestedCourses
+    extra=0
+    fields=('intrested_courses','suitable_time')
+    can_delete=True
+
+class StudentsAdmin(admin.ModelAdmin):
+    list_display = ('full_name','img_field','gender','date_of_birth','phone_no','email','parents_info',)
+    search_fields = ('user__username', 'first_name', 'last_name', 'phone_no', 'email', 'supervisor__username', 'department__name')
+    inlines = [StudentAcademicDetailsInline,PermanentAddressInline,CurrentAddressInline,IntrestedCoursesInline]
+
+
+
+
+
+
+
 # Register the models with their respective admin classes
 admin.site.register(User, UserAdmin)
 admin.site.register(InternProfile, InternProfileAdmin)
 admin.site.register(SupervisorProfile, SupervisorProfileAdmin)
 admin.site.register(Department, DepartmentAdmin)
+admin.site.register(Students,StudentsAdmin)
