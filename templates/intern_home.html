@@ -4,92 +4,241 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intern Dashboard</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a1a1a, #333);
+            color: #eee;
+        }
+
+        /* Header Styling */
+        header {
+            background: linear-gradient(90deg, #4caf50, #2e7d32);
+            padding: 20px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        header h1 {
+            font-size: 28px;
+            margin: 0;
+        }
+        header h2 {
+            font-size: 16px;
+            margin-top: 5px;
+            color: #c8e6c9;
+        }
+        .actions {
+            margin-top: 15px;
+        }
+        .actions a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 14px;
+            padding: 8px 15px;
+            border: 1px solid white;
+            border-radius: 5px;
+            background: transparent;
+            transition: background 0.3s, transform 0.3s;
+        }
+        .actions a:hover {
+            background: #66bb6a;
+            transform: scale(1.1);
+        }
+
+        /* Form Buttons */
+        .form-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .form-buttons button {
+            padding: 12px 25px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(90deg, #4caf50, #2e7d32);
+            color: white;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-buttons button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Forms Styling */
+        .form-section {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .form-section.active {
+            display: block;
+        }
+        form {
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            text-align: left;
+            width: 80%;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+        }
+        form h3 {
+            margin-top: 0;
+            color: #4caf50;
+            font-size: 20px;
+        }
+        form input, form textarea, form select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: rgb(240, 232, 232);
+            color: #333;
+        }
+        form button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background: #4caf50;
+            color: white;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.3s, background 0.3s;
+        }
+        form button:hover {
+            transform: scale(1.05);
+            background: #388e3c;
+        }
+
+        /* Alert Message Styling */
+        .alert-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .alert {
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            animation: fadeInOut 4s ease forwards;
+        }
+        .alert-success {
+            background-color: #4caf50;
+            color: white;
+            border: 1px solid #388e3c;
+        }
+        .alert-error {
+            background-color: #e74c3c;
+            color: white;
+            border: 1px solid #c0392b;
+        }
+
+        /* Animations */
+        @keyframes fadeInOut {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            10%, 90% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- Header -->
     <header>
-        <h1>Welcome, {{ intern_profile.user.username }}</h1>
+        <h1>Welcome, {{ intern_profile.user.first_name }}</h1>
         <h2>Department: {{ department.name }} | Supervisor: {{ supervisor.username }}</h2>
+        <div class="actions">
+            <a href="{% url 'logout' %}">Logout</a>
+            <a href="{% url 'default_page' %}">Home</a>
+            <a href="{% url 'generate_pdf' %}">Generate PDF</a>
+        </div>
     </header>
 
+    <!-- Main Content -->
     <div class="content">
-        <h3>Daily Reports</h3>
-        <ul>
-            {% for report in daily_reports %}
-                <li>{{ report.date }} - {{ report.task_done }}</li>
-            {% empty %}
-                <li>No daily reports submitted yet.</li>
-            {% endfor %}
-        </ul>
+        <!-- Form Buttons -->
+        <div class="form-buttons">
+            <button onclick="showForm('evaluation-form')">Intern Evaluation Form</button>
+            <button onclick="showForm('activity-form')">Daily Activity Form</button>
+            <button onclick="showForm('planning-form')">Next Day Planning Form</button>
+        </div>
 
-        <hr>
-
-        <h3>Submit Daily Report</h3>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ daily_report_form.as_p }}
-            <button type="submit" name="daily_report">Submit Daily Report</button>
-        </form>
-
-        <hr>
-
-        <h3>Daily Activities</h3>
-        <ul>
-            {% for activity in daily_activities %}
-                <li>
-                    <strong>Date:</strong> {{ activity.date }} | 
-                    <strong>Start Time:</strong> {{ activity.start_time }} | 
-                    <strong>End Time:</strong> {{ activity.end_time }} | 
-                    <strong>Total Hours:</strong> {{ activity.total_hours }} | 
-                    <strong>Activity:</strong> {{ activity.activity }} | 
-                    <strong>Remarks:</strong> {{ activity.remarks }}
-                    {% if activity.remarks == "Other" %}
-                        <strong>Other Remarks:</strong> {{ activity.other_remarks }}
-                    {% endif %}
-                </li>
-            {% empty %}
-                <li>No daily activities submitted yet.</li>
-            {% endfor %}
-        </ul>
-
-        <hr>
-
-        <h3>Submit Daily Activity</h3>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ daily_activity_form.as_p }}
-            <button type="submit" name="daily_activity">Submit Daily Activity</button>
-        </form>
-
-        <hr>
-
-        <h3>Next Day Planning</h3>
-        <ul>
-            {% for planning in next_day_plans %}
-                <li>
-                    <strong>Date:</strong> {{ planning.date }} | 
-                    <strong>Start Time:</strong> {{ planning.start_time }} | 
-                    <strong>End Time:</strong> {{ planning.end_time }} | 
-                    <strong>Total Hours:</strong> {{ planning.total_hours }} | 
-                    <strong>To-Do:</strong> {{ planning.to_do }} | 
-                    <strong>Coordination:</strong> {{ planning.coordination }}
-                </li>
-            {% empty %}
-                <li>No next day planning submitted yet.</li>
-            {% endfor %}
-        </ul>
-
-        <hr>
-
-        <h3>Submit Next Day Planning</h3>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ next_day_planning_form.as_p }}
-            <button type="submit" name="next_day_planning">Submit Next Day Planning</button>
-        </form>
+        <!-- Forms -->
+        <div id="evaluation-form" class="form-section active">
+            <form method="POST">
+                {% csrf_token %}
+                <h3>Intern Evaluation Form</h3>
+                {{ daily_report_form.as_p }}
+                <button type="submit" name="daily_report">Submit Evaluation</button>
+            </form>
+        </div>
+        <div id="activity-form" class="form-section">
+            <form method="POST">
+                {% csrf_token %}
+                <h3>Daily Activity Form</h3>
+                {{ daily_activity_form.as_p }}
+                <button type="submit" name="daily_activity">Submit Activity</button>
+            </form>
+        </div>
+        <div id="planning-form" class="form-section">
+            <form method="POST">
+                {% csrf_token %}
+                <h3>Next Day Planning Form</h3>
+                {{ next_day_planning_form.as_p }}
+                <button type="submit" name="next_day_planning">Submit Plan</button>
+            </form>
+        </div>
     </div>
 
-    <footer>
-        <p>Powered by Aashish Pradhan</p>
-    </footer>
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <script>
+        // Function to show forms
+        function showForm(formId) {
+            const forms = document.querySelectorAll('.form-section');
+            forms.forEach(form => form.classList.remove('active'));
+            document.getElementById(formId).classList.add('active');
+        }
+
+        // Remove messages after 4 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => alert.style.display = 'none');
+        }, 4000);
+    </script>
 </body>
 </html>

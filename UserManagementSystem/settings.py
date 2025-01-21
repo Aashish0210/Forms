@@ -99,6 +99,9 @@ AUTH_USER_MODEL = 'usermanagement.User'  # Replace 'usermanagement' with the nam
 
 
 STATIC_URL = '/static/'
+LOGIN_URL='/login/'
+
+LOGOUT_REDIRECT_URL = '/'
 
 
 

@@ -23,6 +23,14 @@
                 <td>{{ intern.phone_no }}</td>
             </tr>
         {% endfor %}
+        {% for supercisor in supervisor %}
+            <tr>
+                <td>{{ intern.user.username }}</td>
+                <td>{{ intern.department.name }}</td>
+                <td>{{ intern.supervisor.username }}</td>
+                <td>{{ intern.phone_no }}</td>
+            </tr>
+        {% endfor %}
     </table>
 </body>
 </html>

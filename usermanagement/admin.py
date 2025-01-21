@@ -13,33 +13,37 @@ class UserAdmin(admin.ModelAdmin):
 class DailyReportInline(admin.TabularInline):
     model = DailyReport
     extra = 0
-    fields = ['date', 'time_in', 'time_out', 'task_done', 'problem_faced']
+    fields = ['date', 'time_in', 'time_out','total_hours', 'task_done', 'problem_faced']
+    can_delete = True  # Allow deletion of individual reports
 
 # Inline for Intern Daily Activity
 class InternDailyActivityInline(admin.TabularInline):
     model = InternDailyActivity
     extra = 0
     fields = ['date', 'start_time', 'end_time', 'total_hours', 'activity', 'remarks', 'other_remarks']
+    can_delete = True  # Allow deletion of individual activities
 
 # Inline for Intern Next Day Planning
 class InternNextDayPlanningInline(admin.TabularInline):
     model = InternNextDayPlanning
     extra = 0
     fields = ['date', 'coordination', 'start_time', 'end_time', 'total_hours', 'to_do']
+    can_delete = True  # Allow deletion of individual planning records
 
 # Inline for Supervisor Daily Activity
 class SupervisorDailyActivityInline(admin.TabularInline):
     model = SupervisorDailyActivity
     extra = 0
     fields = ['date', 'start_time', 'end_time', 'total_hours', 'activity', 'remarks', 'other_remarks']
+    can_delete = True  # Allow deletion of individual supervisor activities
 
 # Inline for Supervisor Next Day Planning
 class SupervisorNextDayPlanningInline(admin.TabularInline):
     model = SupervisorNextDayPlanning
     extra = 0
     fields = ['date', 'coordination', 'start_time', 'end_time', 'total_hours', 'to_do']
+    can_delete = True  # Allow deletion of individual supervisor planning records
 
-# Inline for Project Management Form
 # Inline for Project Management Form
 class ProjectManagementFormInline(admin.TabularInline):
     model = ProjectManagementForm
@@ -48,6 +52,7 @@ class ProjectManagementFormInline(admin.TabularInline):
               'progress', 'priority_level', 'milestone_achievement', 'next_milestone', 'risk_and_challenges', 
               'client_or_stakeholder', 'tools_and_technology', 'custom_tool']
     fk_name = 'project_manager'  # Optional: display as ID inputs instead of dropdowns
+    can_delete = True  # Allow deletion of individual project management forms
 
 # Admin for InternProfile
 class InternProfileAdmin(admin.ModelAdmin):

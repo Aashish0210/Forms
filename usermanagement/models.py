@@ -44,7 +44,7 @@ class Department(models.Model):
         related_name='department_head',
         limit_choices_to=Q(role='supervisor')  # Restrict to supervisors
     )
-    location = models.CharField(max_length=200)
+    name_and_location = models.CharField(max_length=200)
     supervisors = models.ManyToManyField(
         User,
         related_name='supervised_departments',
@@ -58,6 +58,7 @@ class Department(models.Model):
 # -------------------------------------------
 # Supervisor Profile
 # -------------------------------------------
+# Supervisor Profile
 class SupervisorProfile(models.Model):
     user = models.OneToOneField(
         User,
@@ -68,19 +69,25 @@ class SupervisorProfile(models.Model):
     last_name = models.CharField(max_length=150, blank=True)
     phone_no = models.CharField(max_length=15, blank=True, null=True)
     email = models.EmailField(max_length=100)
+
     def __str__(self):
         return f"Supervisor: {self.user.username}"
 
-# -------------------------------------------
+    def delete(self, *args, **kwargs):
+        # Delete associated User (Supervisor)
+        user = self.user
+        super().delete(*args, **kwargs)  # First, delete the profile
+        user.delete()  # Then, delete the user
+        print(f"Supervisor {user.username} and associated profile deleted.")
+
 # Intern Profile
-# -------------------------------------------
 class InternProfile(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         limit_choices_to=Q(role='intern')
     )
-    first_name=models.CharField(max_length=20)
+    first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
     pu_reg_no = models.CharField(max_length=20, null=True)
     phone_no = models.CharField(max_length=15, blank=True, null=True)
@@ -102,6 +109,13 @@ class InternProfile(models.Model):
     def __str__(self):
         department_name = self.department.name if self.department else 'No Department'
         return f"Intern: {self.user.username}, Department: {department_name}"
+    
+    def delete(self, *args, **kwargs):
+        # Delete associated User (Intern)
+        user = self.user
+        super().delete(*args, **kwargs)  # First, delete the profile
+        user.delete()  # Then, delete the user
+        print(f"Intern {user.username} and associated profile deleted.")
 
 
 # -------------------------------------------
@@ -144,12 +158,12 @@ class ProjectManagementForm(models.Model):
 class InternDailyActivity(models.Model):
     intern_profile = models.ForeignKey(InternProfile, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=False)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    start_time = models.TimeField(default='10:30:AM')
+    end_time = models.TimeField(default='05:00:PM')
     total_hours = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     activity = models.TextField()
     remarks = models.CharField(max_length=20, choices=[("Completed", "Completed"), ("Uncompleted", "Uncompleted"), ("Other", "Other")])
-    other_remarks = models.TextField(blank=True, null=True)
+    other_remarks = models.TextField(blank =True, null=True)
 
     def __str__(self):
         return f"{self.intern_profile.user.username} - {self.date}"
@@ -162,8 +176,8 @@ class InternNextDayPlanning(models.Model):
     intern_profile = models.ForeignKey(InternProfile, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=False)
     coordination = models.TextField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    start_time = models.TimeField(default='10:30:AM')
+    end_time = models.TimeField(default='05:00:PM')
     total_hours = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     to_do = models.TextField()
 
@@ -177,8 +191,8 @@ class InternNextDayPlanning(models.Model):
 class SupervisorDailyActivity(models.Model):
     supervisor_profile = models.ForeignKey(SupervisorProfile, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=False)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    start_time = models.TimeField(default='10:30:AM')
+    end_time = models.TimeField(default='05:00:PM')
     total_hours = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     activity = models.TextField()
     remarks = models.CharField(max_length=20, choices=[("Completed", "Completed"), ("Uncompleted", "Uncompleted"), ("Other", "Other")])
@@ -195,8 +209,8 @@ class SupervisorNextDayPlanning(models.Model):
     supervisor_profile = models.ForeignKey(SupervisorProfile, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=False)
     coordination = models.TextField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    start_time = models.TimeField(default='10:30:AM')
+    end_time = models.TimeField(default='05:00:PM')
     total_hours = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     to_do = models.TextField()
 
@@ -211,8 +225,9 @@ class SupervisorNextDayPlanning(models.Model):
 class DailyReport(models.Model):
     intern = models.ForeignKey(InternProfile, on_delete=models.CASCADE)
     date = models.DateField()
-    time_in = models.TimeField()
-    time_out = models.TimeField()
+    time_in = models.TimeField(default='10:30:AM')
+    time_out = models.TimeField(default='05:00:PM')
+    total_hours = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     task_done = models.TextField()
     problem_faced = models.TextField()
 
@@ -222,3 +237,48 @@ class DailyReport(models.Model):
     class Meta:
         verbose_name = "Intern Evaluation Form"
         verbose_name_plural = "Intern Evaluation Forms"
+
+class Students(models.Model):
+    username=models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        limit_choice_to=Q('studenst')
+    )
+    img_field = models.URLField(max_length=200, blank=True, null=True, help_text="Enter a valid image URL.")
+    full_name=models.CharField(max_length=20)
+    gender=models.CharField(max_length=20,choices=('male', 'female'))
+    date_of_birth=models.DateField()
+    phone_no = models.CharField(
+        max_length=15,
+        blank=True,
+        null=True,
+        validators=[
+            RegexValidator(
+                regex=r'^\+?1?\d{9,15}$',
+                message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
+            )
+        ],
+        help_text="Enter phone number in international format, e.g., +123456789."
+    )
+    email=models.EmailField(max_length=255)
+    parents_info=models.CharField(max_length=200,default={'Father Name=Hari', 'Mother Name=Sita'})
+    par_phone_no=models.CharField(max_length=15)
+    def __str__(self):
+        return self.full_name
+
+
+class studentacademicdetails(models.Model):
+    user=models.ForeignKey(Students,on_delete=models.CASCADE)
+    degree=models.CharField(max_length=30)
+    strated_date=models.DateField()
+    division_gpa = models.CharField(max_length=100, blank=True, null=True, help_text="Enter the division or GPA as a string.")
+    college_university=models.CharField(max_length=30)
+    def __str__(self):
+        return self.user
+
+class permanentaddress(models.Model):
+    user=models.ForeignKey(Students,on_delete=models.CASCADE)
+    provience=models.CharField(max_length=30)
+    district=models.CharField(max_length=30)
+    mc_rm=models.CharField(max_length=30,help_text="Enter the name of metropolitan/district name")
+

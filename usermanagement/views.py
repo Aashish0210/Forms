@@ -1,63 +1,67 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import login, logout
-from .forms import  DailyForm,ProjectManagementFormForm,SignUpForm
-from .models import User, InternProfile, DailyReport,SupervisorProfile
-from datetime import datetime
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import HttpResponse
-from .pdf import generate_pdf
-import os
-from django.conf import settings
+from django.http import HttpResponse, JsonResponse
 from django.core.mail import EmailMessage
-from django.http import JsonResponse
-from django.shortcuts import render
+from django.conf import settings
 from django.contrib import messages
+from datetime import datetime
+from .pdf import generate_pdf
+import logging
 
-# from .forms import UploadFileForm
-# from .models import UploadedFile
+from .forms import (
+    DailyForm, InternDailyActivityForm, InternNextDayPlanningForm,
+    ProjectManagementFormForm, SupervisorDailyActivityForm,
+    SupervisorNextDayPlanningForm, SignUpForm
+)
+from .models import InternProfile, SupervisorProfile, DailyReport
 
+# Logger Configuration
+logger = logging.getLogger(__name__)
 
+# Utility Function for Sending Email
 def send_email_with_attachment(file_path):
     email = EmailMessage(
         subject="Generated PDF Report",
         body="Please find the attached PDF report.",
         from_email=settings.EMAIL_HOST_USER,
-        to=['frontdesksera@gmail.com'],  # Recipient email
+        to=['frontdesksera@gmail.com'],
     )
     email.attach_file(file_path)
     email.send()
 
 
-@staff_member_required
-def superuser_dashboard(request):
-    # Fetch all intern profiles to display on the superuser dashboard
-    interns = InternProfile.objects.all()
-    return render(request, 'superuser_dashboard.html', {'interns': interns})
+# Authorization Utility
+def check_role(user, role):
+    return hasattr(user, 'role') and user.role == role
 
 
-
+# Authentication and Authorization Views
 def signup(request):
-    # Handle user sign-up
+    """Handle user signup."""
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)  # Automatically log in after signup
+            login(request, user)  # Auto-login after signup
             return redirect('redirect_to_role_home')
     else:
         form = SignUpForm()
     return render(request, 'signup.html', {'form': form})
 
+
 def custom_login(request):
-    # Handle custom login form
+    """Custom login form."""
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
             return redirect('redirect_to_role_home')
+        else:
+            messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
@@ -65,86 +69,52 @@ def custom_login(request):
 
 @login_required
 def redirect_to_role_home(request):
-    # Redirect user based on their role to the respective homepage
-    if request.user.role == 'intern':
-        return redirect('intern_home')
-    elif request.user.role == 'supervisor':
-        return redirect('supervisor_home')
-    elif request.user.role == 'department_head':
-        return redirect('department_home')
-    elif request.user.is_superuser:
+    """Redirect users to home based on role."""
+    if request.user.is_superuser:
         return redirect('superuser_dashboard')
+    elif check_role(request.user, 'intern'):
+        return redirect('intern_home')
+    elif check_role(request.user, 'supervisor'):
+        return redirect('supervisor_home')
+    elif check_role(request.user, 'department_head'):
+        return redirect('department_home')
     return redirect('default_page')
 
 
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .forms import DailyForm, InternDailyActivityForm, InternNextDayPlanningForm
-from .models import InternProfile
-import logging
-
-# Create a logger instance
-logger = logging.getLogger(__name__)
-
 @login_required
+def user_logout(request):
+    """Logout the user."""
+    logout(request)
+    return redirect('default_page')
+
+
+# Intern Views
+@login_required
+@user_passes_test(lambda u: check_role(u, 'intern'), login_url='default_page')
 def intern_home(request):
     try:
-        # Retrieve the intern's profile
         intern_profile = request.user.internprofile
         department = intern_profile.department
         supervisor = intern_profile.supervisor
 
-        # Fetch related data for display
-        daily_reports = intern_profile.dailyreport_set.all()
+        daily_reports = intern_profile.dailyreport_set.all()  # Use related_name if defined
         daily_activities = intern_profile.interndailyactivity_set.all()
         next_day_plans = intern_profile.internnextdayplanning_set.all()
     except InternProfile.DoesNotExist:
-        logger.error("InternProfile not found for the logged-in user.")
+        logger.error(f"InternProfile does not exist for user {request.user}.")
         return redirect('default_page')
 
-    # Initialize forms
-    daily_report_form = DailyForm()
-    daily_activity_form = InternDailyActivityForm()
-    next_day_planning_form = InternNextDayPlanningForm()
+    daily_report_form = DailyForm(request.POST or None)
+    daily_activity_form = InternDailyActivityForm(request.POST or None)
+    next_day_planning_form = InternNextDayPlanningForm(request.POST or None)
 
-    # Handle POST requests for form submissions
     if request.method == 'POST':
         if 'daily_report' in request.POST:
-            daily_report_form = DailyForm(request.POST)
-            if daily_report_form.is_valid():
-                daily_report = daily_report_form.save(commit=False)
-                daily_report.intern = intern_profile
-                daily_report.save()
-                messages.success(request, "Daily Report submitted successfully!")
-                logger.info("Daily Report submitted successfully.")
-            else:
-                messages.error(request, "Failed to submit Daily Report. Please check the form and try again.")
-                logger.error(f"Daily Report Form Errors: {daily_report_form.errors}")
-
+            handle_form_submission(request, daily_report_form, intern_profile, 'Daily Report')
         elif 'daily_activity' in request.POST:
-            daily_activity_form = InternDailyActivityForm(request.POST)
-            if daily_activity_form.is_valid():
-                daily_activity = daily_activity_form.save(commit=False)
-                daily_activity.intern_profile = intern_profile  # Adjust field as per model definition
-                daily_activity.save()
-                messages.success(request, "Daily Activity submitted successfully!")
-                logger.info("Daily Activity submitted successfully.")
-            else:
-                messages.error(request, "Failed to submit Daily Activity. Please check the form and try again.")
-                logger.error(f"Daily Activity Form Errors: {daily_activity_form.errors}")
-
+            handle_form_submission(request, daily_activity_form, intern_profile, 'Daily Activity')
         elif 'next_day_planning' in request.POST:
-            next_day_planning_form = InternNextDayPlanningForm(request.POST)
-            if next_day_planning_form.is_valid():
-                next_day_planning = next_day_planning_form.save(commit=False)
-                next_day_planning.intern_profile = intern_profile  # Adjust field as per model definition
-                next_day_planning.save()
-                messages.success(request, "Next Day Planning submitted successfully!")
-                logger.info("Next Day Planning submitted successfully.")
-            else:
-                messages.error(request, "Failed to submit Next Day Planning. Please check the form and try again.")
-                logger.error(f"Next Day Planning Form Errors: {next_day_planning_form.errors}")
+            handle_form_submission(request, next_day_planning_form, intern_profile, 'Next Day Planning')
 
     return render(request, 'intern_home.html', {
         'intern_profile': intern_profile,
@@ -159,15 +129,8 @@ def intern_home(request):
     })
 
 
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .forms import (
-    ProjectManagementFormForm, 
-    SupervisorDailyActivityForm, 
-    SupervisorNextDayPlanningForm
-)
-from .models import SupervisorProfile
+
+# Supervisor Views
 
 @login_required
 def supervisor_home(request):
@@ -231,25 +194,38 @@ def supervisor_home(request):
     })
 
 
+
+# Department Head Views
 @login_required
+@user_passes_test(lambda u: check_role(u, 'department_head'), login_url='default_page')
 def department_home(request):
-    # Render department head's home page
+    """Department head's dashboard."""
     return render(request, 'department_home.html')
 
 
-@login_required
-def superuser_home(request):
-    # Render superuser's dashboard
-    return render(request, 'superuser_dashboard.html')
+# Superuser Views
+@staff_member_required
+def superuser_dashboard(request):
+    """Superuser dashboard."""
+    interns = InternProfile.objects.all()
+    return render(request, 'superuser_dashboard.html', {'interns': interns})
 
 
-@login_required
-def user_logout(request):
-    # Log out the user and redirect to the default page
-    logout(request)
-    return redirect('default_page')
-
-
+# Default Page for Unauthorized Access
 def default_page(request):
-    # Render the default page for users not logged in or other cases
+    """Default page for unauthorized users."""
     return render(request, 'default.html')
+
+
+# Helper Function for Form Handling
+def handle_form_submission(request, form, intern_profile, form_name):
+    """Helper to handle form submissions."""
+    if form.is_valid():
+        form_instance = form.save(commit=False)  # Don't save to the database yet
+        form_instance.intern = intern_profile  # Set the foreign key field
+        form_instance.save()  # Now save to the database
+        messages.success(request, f"{form_name} submitted successfully!")
+        logger.info(f"{form_name} submitted successfully.")
+    else:
+        messages.error(request, f"Failed to submit {form_name}. Please try again.")
+        logger.error(f"{form_name} submission errors: {form.errors}.")
