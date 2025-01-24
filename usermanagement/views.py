@@ -10,14 +10,15 @@ from django.contrib import messages
 from datetime import datetime
 from .pdf import generate_pdf
 import logging
+from django.contrib.auth.views import PasswordResetView
 
 from .forms import (
     DailyForm, InternDailyActivityForm, InternNextDayPlanningForm,
     ProjectManagementFormForm, SupervisorDailyActivityForm,
-    SupervisorNextDayPlanningForm, SignUpForm
-)
-from .models import InternProfile, SupervisorProfile, DailyReport
+    SupervisorNextDayPlanningForm, SignUpForm,EmployeeDailyActivityForm,EmployeeNextDayPlanningForm,BaseTimeForm
 
+)
+from .models import InternProfile, SupervisorProfile, DailyReport,EmployesProfile
 # Logger Configuration
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,15 @@ def send_email_with_attachment(file_path):
 # Authorization Utility
 def check_role(user, role):
     return hasattr(user, 'role') and user.role == role
+
+@login_required
+def check_session(request):
+    # If the user is authenticated, return session status as true
+    return JsonResponse({'session_active': True})
+
+def session_expired(request):
+    # If session is expired or the user is not authenticated
+    return JsonResponse({'session_active': False})
 
 
 # Authentication and Authorization Views
@@ -74,6 +84,8 @@ def redirect_to_role_home(request):
         return redirect('superuser_dashboard')
     elif check_role(request.user, 'intern'):
         return redirect('intern_home')
+    elif check_role(request.user, 'employee'):
+        return redirect('employee_home')
     elif check_role(request.user, 'supervisor'):
         return redirect('supervisor_home')
     elif check_role(request.user, 'department_head'):
@@ -137,11 +149,13 @@ def supervisor_home(request):
     try:
         # Retrieve supervisor profile
         supervisor_profile = request.user.supervisorprofile
-        managed_projects = supervisor_profile.projectmanagementform_set.all()
+        # Use the custom related_name for accessing managed projects
+        managed_projects = supervisor_profile.supervised_projects.all()
         daily_activities = supervisor_profile.supervisordailyactivity_set.all()
         next_day_plans = supervisor_profile.supervisornextdayplanning_set.all()
     except SupervisorProfile.DoesNotExist:
         return redirect('default_page')
+
 
     # Initialize forms
     project_management_form = ProjectManagementFormForm()
@@ -193,6 +207,52 @@ def supervisor_home(request):
         'next_day_planning_form': next_day_planning_form,
     })
 
+@login_required
+def employee_home(request):
+    try:
+        # Retrieve the employee profile using the correct related_name
+        employee_profile = request.user.employee_profile
+        print(f"Employee Profile Retrieved: {employee_profile}")
+        daily_activities = employee_profile.employeedailyactivity_set.all()
+        next_day_plans = employee_profile.employeenextdayplanning_set.all()
+    except EmployesProfile.DoesNotExist:
+        print("EmployesProfile.DoesNotExist: Redirecting to default_page")
+        return redirect('default_page')
+
+    # Initialize forms
+    daily_activity_form = EmployeeDailyActivityForm()
+    next_day_planning_form = EmployeeNextDayPlanningForm()
+
+    if request.method == 'POST':
+        if 'daily_activity' in request.POST:
+            daily_activity_form = EmployeeDailyActivityForm(request.POST)
+            if daily_activity_form.is_valid():
+                daily_activity = daily_activity_form.save(commit=False)
+                daily_activity.employee_profile = employee_profile
+                daily_activity.save()
+                messages.success(request, "Daily Activity submitted successfully!")
+                return redirect('employee_home')
+            else:
+                messages.error(request, "Could not submit Daily Activity. Please try again.")
+
+        elif 'next_day_planning' in request.POST:
+            next_day_planning_form = EmployeeNextDayPlanningForm(request.POST)
+            if next_day_planning_form.is_valid():
+                next_day_planning = next_day_planning_form.save(commit=False)
+                next_day_planning.employee_profile = employee_profile
+                next_day_planning.save()
+                messages.success(request, "Next Day Planning submitted successfully!")
+                return redirect('employee_home')
+            else:
+                messages.error(request, "Could not submit Next Day Planning. Please try again.")
+
+    return render(request, 'employee_home.html', {
+        'employee_profile': employee_profile,
+        'daily_activities': daily_activities,
+        'next_day_plans': next_day_plans,
+        'daily_activity_form': daily_activity_form,
+        'next_day_planning_form': next_day_planning_form,
+    })
 
 
 # Department Head Views
@@ -229,3 +289,13 @@ def handle_form_submission(request, form, intern_profile, form_name):
     else:
         messages.error(request, f"Failed to submit {form_name}. Please try again.")
         logger.error(f"{form_name} submission errors: {form.errors}.")
+
+class CustomPasswordResetView(PasswordResetView):
+    def form_valid(self, form):
+        try:
+            response = super().form_valid(form)
+            messages.success(self.request, "Password reset email sent successfully.")
+            return response
+        except Exception as e:
+            messages.error(self.request, "Error sending email: " + str(e))
+            return redirect('password_reset')

@@ -91,7 +91,7 @@ def generate_pdf(request):
     table_data_reports = [["S.N.", "Date", "Time In", "Time Out", "Major Activities Performed", "Any concerns or problem faced", "Total Hours"]]
     for idx, report in enumerate(daily_reports, start=1):
         report_date = report.date.strftime('%Y-%m-%d') if report.date else 'No Date'
-        table_data_reports.append([idx, report_date, report.time_in, report.time_out, report.task_done, report.problem_faced, report.total_hours])
+        table_data_reports.append([idx, report_date, report.start_time, report.end_time, report.task_done, report.problem_faced, report.total_hours])
 
     # Adjust column widths for daily reports table (include "Total Hours" column)
     table_reports = Table(table_data_reports, colWidths=[40, 50, 60, 50, 140, 155, 50])

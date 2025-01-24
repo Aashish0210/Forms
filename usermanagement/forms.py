@@ -2,8 +2,10 @@ from django import forms
 from .models import User, InternProfile, SupervisorProfile, Department, DailyReport,ProjectManagementForm
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.forms import TimeInput
-from .models import InternDailyActivity, InternNextDayPlanning, SupervisorDailyActivity, SupervisorNextDayPlanning
-
+from .models import InternDailyActivity, InternNextDayPlanning, SupervisorDailyActivity, SupervisorNextDayPlanning,EmployesProfile,Students,EmployeeDailyActivity, EmployeeNextDayPlanning
+from django import forms
+from django.core.exceptions import ValidationError
+from .models import DailyReport
 
 class SignUpForm(UserCreationForm):
     username = forms.CharField(
@@ -19,7 +21,7 @@ class SignUpForm(UserCreationForm):
         widget=forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Last Name'})
     )
     role = forms.ChoiceField(
-        choices=User.ROLES,
+        choices=[('intern', 'Intern'), ('supervisor', 'Supervisor'), ('employee', 'employee')],  # Limit choices here
         required=True,
         widget=forms.Select(attrs={'class': 'form-input'})
     )
@@ -70,7 +72,7 @@ class SignUpForm(UserCreationForm):
         if commit:
             user.save()
 
-        # Create or update related profiles
+        # Create or update related profiles based on the role
         if user.role == 'intern':
             InternProfile.objects.create(
                 user=user, 
@@ -78,7 +80,6 @@ class SignUpForm(UserCreationForm):
                 last_name=user.last_name,
                 email=user.email,
                 phone_no=user.phone_no,
-                # intern_st_date=user.intern_st_date,
                 department=self.cleaned_data.get('department'),
                 pu_reg_no=self.cleaned_data.get('pu_reg_no'),
                 supervisor=self.cleaned_data.get('supervisor'), 
@@ -91,10 +92,19 @@ class SignUpForm(UserCreationForm):
                 last_name=user.last_name,
                 phone_no=self.cleaned_data.get('phone_no'),
                 email=self.cleaned_data.get('email'),
-                
+            )
+        
+        if user.role == 'employee':
+            EmployesProfile.objects.create(
+                user=user, 
+                first_name=user.first_name,
+                last_name=user.last_name,
+                phone_no=self.cleaned_data.get('phone_no'),
+                email=self.cleaned_data.get('email'),
             )
 
         return user
+
 
 class CustomAuthenticationForm(AuthenticationForm):
     class Meta:
@@ -102,116 +112,82 @@ class CustomAuthenticationForm(AuthenticationForm):
         fields = ['username', 'password']
 
 
+def calculate_total_hours(start_time, end_time):
+    """Calculate total hours between start and end time."""
+    if start_time and end_time:
+        if end_time <= start_time:
+            raise forms.ValidationError("End time must be later than start time.")
+        
+        total_seconds = (end_time.hour * 3600 + end_time.minute * 60) - (start_time.hour * 3600 + start_time.minute * 60)
+        return round(total_seconds / 3600, 2)
+    return 0
 
-
-class DateInput(forms.DateInput):
-    input_type = 'date'  # HTML5 date input
-
-class TimeInput(forms.TimeInput):
-    input_type = 'time'  # HTML5 time input
-
-from django import forms
-from django.core.exceptions import ValidationError
-from .models import DailyReport
-
-class DailyForm(forms.ModelForm):
+class BaseTimeForm(forms.ModelForm):
     class Meta:
-        model = DailyReport
-        fields = ['date', 'time_in', 'time_out', 'task_done', 'total_hours', 'problem_faced']
         widgets = {
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),  # Add a calendar picker
-            'time_in': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'time_out': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'task_done': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'total_hours': forms.NumberInput(attrs={
-                'class': 'form-control', 
-                'placeholder': ' Total hours will be automatically filled '
-            }),
-            'problem_faced': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'total_hours': forms.NumberInput(attrs={'class': 'form-control', 'style': 'display: none;', 'placeholder': 'Total hours will be automatically filled'}),
         }
 
     def clean(self):
         cleaned_data = super().clean()
-        time_in = cleaned_data.get('time_in')
-        time_out = cleaned_data.get('time_out')
-
-        if time_in and time_out:
-            # Ensure time_out is later than time_in
-            if time_out <= time_in:
-                raise ValidationError("Time out must be later than time in.")
-
-            # Calculate  Total hours will be automatically filled
-            total_seconds = (time_out.hour * 3600 + time_out.minute * 60) - (time_in.hour * 3600 + time_in.minute * 60)
-            total_hours = round(total_seconds / 3600, 2)  # Convert to hours, rounded to 2 decimal places
-
-            # Update total_hours field
-            cleaned_data['total_hours'] = total_hours
-
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        
+        # Calculate and set total_hours
+        cleaned_data['total_hours'] = calculate_total_hours(start_time, end_time)
+        
         return cleaned_data
 
-
-class InternDailyActivityForm(forms.ModelForm):
+class SENextdayFORM(forms.ModelForm):
     class Meta:
-        model = InternDailyActivity
-        fields = ['intern_profile', 'date', 'start_time', 'end_time', 'total_hours', 'activity', 'remarks', 'other_remarks']
         widgets = {
-            'intern_profile': forms.Select(attrs={'class': 'form-control'}),
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'total_hours': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': ' Total hours will be automatically filled'}),
+            'coordination': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Coordination Details'}),
+            'to_do': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'To-Do Details'}),
+        }
+
+class SEDailyForm(forms.ModelForm):
+    class Meta:
+        widgets = {
             'activity': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Activity Details'}),
             'remarks': forms.Select(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Remarks'}),
             'other_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Other Remarks'}),
         }
 
-    def clean(self):
-        cleaned_data = super().clean()
-        start_time = cleaned_data.get('start_time')
-        end_time = cleaned_data.get('end_time')
 
-        if start_time and end_time:
-            if end_time <= start_time:
-                raise forms.ValidationError("End time must be later than start time.")
-            
-            # Calculate  Total hours will be automatically filled
-            total_seconds = (end_time.hour * 3600 + end_time.minute * 60) - (start_time.hour * 3600 + start_time.minute * 60)
-            total_hours = round(total_seconds / 3600, 2)
-            cleaned_data['total_hours'] = total_hours
-
-        return cleaned_data
+class DailyForm(BaseTimeForm):
+    class Meta:
+        model = DailyReport
+        fields = ['date', 'start_time', 'end_time', 'task_done', 'total_hours', 'problem_faced']
+        widgets = {
+            **BaseTimeForm.Meta.widgets,
+            'task_done': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'problem_faced': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        }
 
 
-class InternNextDayPlanningForm(forms.ModelForm):
+class InternDailyActivityForm(BaseTimeForm):
+    class Meta:
+        model = InternDailyActivity
+        fields = ['intern_profile', 'date', 'start_time', 'end_time', 'total_hours', 'activity', 'remarks', 'other_remarks']
+        widgets = {
+            **BaseTimeForm.Meta.widgets,
+            **SEDailyForm.Meta.widgets,
+            'intern_profile': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+class InternNextDayPlanningForm(BaseTimeForm):
     class Meta:
         model = InternNextDayPlanning
         fields = ['intern_profile', 'date', 'coordination', 'start_time', 'end_time', 'total_hours', 'to_do']
         widgets = {
+            **BaseTimeForm.Meta.widgets,
+            **SENextdayFORM.Meta.widgets,
             'intern_profile': forms.Select(attrs={'class': 'form-control'}),
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'coordination': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Coordination Details'}),
-            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'total_hours': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': ' Total hours will be automatically filled'}),
-            'to_do': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'To-Do Details'}),
         }
-
-    def clean(self):
-        cleaned_data = super().clean()
-        start_time = cleaned_data.get('start_time')
-        end_time = cleaned_data.get('end_time')
-
-        if start_time and end_time:
-            if end_time <= start_time:
-                raise forms.ValidationError("End time must be later than start time.")
-            
-            # Calculate  Total hours will be automatically filled
-            total_seconds = (end_time.hour * 3600 + end_time.minute * 60) - (start_time.hour * 3600 + start_time.minute * 60)
-            total_hours = round(total_seconds / 3600, 2)
-            cleaned_data['total_hours'] = total_hours
-
-        return cleaned_data
-
 
 
 class InternProfileForm(forms.ModelForm):
@@ -234,6 +210,8 @@ class InternProfileForm(forms.ModelForm):
         fields = ['user', 'first_name', 'last_name', 'email', 'pu_reg_no', 'phone_no', 'supervisor', 'department']
 
 
+
+
 class SupervisorProfileForm(forms.ModelForm):
     user = forms.ModelChoiceField(
         queryset=User.objects.filter(role='supervisor'),
@@ -250,62 +228,50 @@ class SupervisorDailyActivityForm(forms.ModelForm):
         model = SupervisorDailyActivity
         fields = ['supervisor_profile', 'date', 'start_time', 'end_time', 'total_hours', 'activity', 'remarks', 'other_remarks']
         widgets = {
+            **BaseTimeForm.Meta.widgets,
+            **SEDailyForm.Meta.widgets,
             'supervisor_profile': forms.Select(attrs={'class': 'form-control'}),
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'total_hours': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': ' Total hours will be automatically filled'}),
-            'activity': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Activity Details'}),
-            'remarks': forms.Select(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Remarks'}),
-            'other_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Other Remarks'}),
         }
 
-    def clean(self):
-        cleaned_data = super().clean()
-        start_time = cleaned_data.get('start_time')
-        end_time = cleaned_data.get('end_time')
-
-        if start_time and end_time:
-            if end_time <= start_time:
-                raise forms.ValidationError("End time must be later than start time.")
-            
-            # Calculate  Total hours will be automatically filled
-            total_seconds = (end_time.hour * 3600 + end_time.minute * 60) - (start_time.hour * 3600 + start_time.minute * 60)
-            total_hours = round(total_seconds / 3600, 2)
-            cleaned_data['total_hours'] = total_hours
-
-        return cleaned_data
-
+    
 
 class SupervisorNextDayPlanningForm(forms.ModelForm):
     class Meta:
         model = SupervisorNextDayPlanning
         fields = ['supervisor_profile', 'date', 'coordination', 'start_time', 'end_time', 'total_hours', 'to_do']
         widgets = {
+            **BaseTimeForm.Meta.widgets,
+            **SENextdayFORM.Meta.widgets,
             'supervisor_profile': forms.Select(attrs={'class': 'form-control'}),
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'coordination': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Coordination Details'}),
-            'start_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'end_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
-            'total_hours': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': ' Total hours will be automatically filled'}),
-            'to_do': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'To-Do Details'}),
         }
 
-    def clean(self):
-        cleaned_data = super().clean()
-        start_time = cleaned_data.get('start_time')
-        end_time = cleaned_data.get('end_time')
+# -------------------------------------------------
+# form for employee
+# -------------------------------------------------
+class EmployeeDailyActivityForm(forms.ModelForm):
+    class Meta:
+        model = EmployeeDailyActivity
+        fields = ['employee_profile', 'date', 'start_time', 'end_time', 'total_hours', 'activity', 'remarks', 'other_remarks']
+        widgets = {
+            **BaseTimeForm.Meta.widgets,
+            **SEDailyForm.Meta.widgets,
+            'employee_profile': forms.Select(attrs={'class': 'form-control'}),
+        }
 
-        if start_time and end_time:
-            if end_time <= start_time:
-                raise forms.ValidationError("End time must be later than start time.")
-            
-            # Calculate  Total hours will be automatically filled
-            total_seconds = (end_time.hour * 3600 + end_time.minute * 60) - (start_time.hour * 3600 + start_time.minute * 60)
-            total_hours = round(total_seconds / 3600, 2)
-            cleaned_data['total_hours'] = total_hours
 
-        return cleaned_data
+
+class EmployeeNextDayPlanningForm(forms.ModelForm):
+    class Meta:
+        model = EmployeeNextDayPlanning
+        fields = ['employee_profile', 'date', 'coordination', 'start_time', 'end_time', 'total_hours', 'to_do']
+        widgets = {
+            **BaseTimeForm.Meta.widgets,
+            **SENextdayFORM.Meta.widgets,
+            'employee_profile': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+# ----------------------------------------------------------------
 
 
 class ProjectManagementFormForm(forms.ModelForm):
@@ -319,11 +285,9 @@ class ProjectManagementFormForm(forms.ModelForm):
             'custom_tool'
         ]
         widgets = {
+            **BaseTimeForm.Meta.widgets,
             'project_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Project Name'}),
             'project_manager': forms.Select(attrs={'class': 'form-control'}),  # Updated class
-            'team_member': forms.Select(attrs={'class': 'form-control', 'placeholder': 'Enter Team Members'}),  # Updated class
-            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),  # Updated class
-            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),  # Updated class
             'current_status': forms.Select(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Current Status'}),
             'progress': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Progress (%)'}),
             'priority_level': forms.Select(attrs={'class': 'form-control'}),  # Updated class
@@ -334,6 +298,13 @@ class ProjectManagementFormForm(forms.ModelForm):
             'tools_and_technology': forms.Textarea(attrs={'class': 'form-control textarea', 'rows': 3, 'placeholder': 'Tools and Technology'}),
             'custom_tool': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Custom Tool'}),
         }
+
+    # Define the ModelMultipleChoiceField with SelectMultiple for dropdown
+    team_member = forms.ModelMultipleChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.SelectMultiple(attrs={'class': 'form-control'}),  # Dropdown with multiple selection
+        required=False  # Set to True if you want this field to be required
+    )
 
 
 
@@ -347,8 +318,3 @@ class DepartmentForm(forms.ModelForm):
         model = Department
         fields = ['name', 'head', 'supervisor', 'name_and_location']
 
-
-# class UploadFileForm(forms.ModelForm):
-#     class Meta:
-#         model = UploadedFile
-#         fields = ['file']

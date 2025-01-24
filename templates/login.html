@@ -153,6 +153,24 @@
             text-decoration: underline;
         }
 
+        /* New style for the Forgot Password link styled as a button */
+        a.forgot-password-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #8e44ad; /* Purple background */
+            color: #fff; /* White text */
+            text-decoration: none; /* No underline */
+            font-size: 14px; /* Smaller text */
+            text-align: center;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        a.forgot-password-btn:hover {
+            background-color: #9b59b6; /* Lighter purple on hover */
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 20px;
@@ -184,6 +202,7 @@
                 {{ form.password }}
             </div>
             <button type="submit" class="btn">Login</button>
+            <a href="{% url 'password_reset' %}" class="forgot-password-btn">Forgot Password?</a>
         </form>
     </div>
 </body>
